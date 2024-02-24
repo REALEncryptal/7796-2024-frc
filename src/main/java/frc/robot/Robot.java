@@ -4,9 +4,19 @@
 
 package frc.robot;
 
+import com.revrobotics.CANSparkMax;
+
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.Joystick;
+
+//constants
+import frc.robot.constants.Climber;
+import frc.robot.constants.Drivetrain;
+import frc.robot.constants.Shooter;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -20,6 +30,19 @@ public class Robot extends TimedRobot {
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
+  // motors
+  private final PWMSparkMax m_topLeft = new PWMSparkMax(Drivetrain.TOP_LEFT_PORT);
+  private final PWMSparkMax m_topRight = new PWMSparkMax(Drivetrain.TOP_RIGHT_PORT);
+  private final PWMSparkMax m_bottomLeft = new PWMSparkMax(Drivetrain.BOTTOM_LEFT_PORT);
+  private final PWMSparkMax m_bottomRight = new PWMSparkMax(Drivetrain.BOTTOM_RIGHT_PORT);
+
+  private final PWMSparkMax m_shooterLower = new PWMSparkMax(Shooter.SHOOTER_LOWER_PORT);
+  private final PWMSparkMax m_shooterUpper = new PWMSparkMax(Shooter.SHOOTER_UPPER_PORT);
+  private final CANSparkMax m_climber = new CANSparkMax(Climber.CLIMBER_MOTOR_PORT, Climber.CLIMBER_MOTOR_TYPE);
+
+  //controllers
+  private final Joystick joystick = new Joystick(0);
+
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -29,6 +52,7 @@ public class Robot extends TimedRobot {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
+    SmartDashboard.putNumber("Climber Current", 0);
   }
 
   /**
@@ -74,15 +98,82 @@ public class Robot extends TimedRobot {
 
   /** This function is called once when teleop is enabled. */
   @Override
-  public void teleopInit() {}
+  public void teleopInit() {
+    // stop motors when they get to a certain current
+    if (Climber.CLIMBER_CURRENT_LIMIT) {
+      m_climber.setSmartCurrentLimit(Climber.MAX_CLIMBER_CURRENT);
+    }
+  }
 
   /** This function is called periodically during operator control. */
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+    //get current
+    double current = m_climber.getOutputCurrent();
+    SmartDashboard.putNumber("Climber Current", current);
+
+    //get controls
+    double forward = joystick.getRawAxis(0);
+    double rotate = joystick.getRawAxis(1);
+
+    boolean climb = joystick.getRawButton(Climber.CLIMBER_UP_BUTTON);
+    boolean descend = joystick.getRawButton(Climber.CLIMBER_DOWN_BUTTON);
+
+    boolean shoot = joystick.getRawButton(Shooter.SHOOTER_BUTTON);
+    boolean intake = joystick.getRawButton(Shooter.INTAKE_BUTTON);
+
+    //drive
+    m_topLeft.set(forward + rotate);
+    m_topRight.set(forward - rotate);
+    m_bottomLeft.set(forward + rotate);
+    m_bottomRight.set(forward - rotate);
+
+    //climb
+    if (climb) {
+      m_climber.set(Climber.CLIMBER_SPEED);
+    } else if (descend) {
+      m_climber.set(-Climber.CLIMBER_SPEED);
+    } else {
+      m_climber.set(0);
+    }
+
+    //shoot
+    if (shoot) {
+      m_shooterLower.set(Shooter.INTAKE_SPEED);
+      m_shooterUpper.set(Shooter.SHOOTER_SPEED);
+    } else if (intake) {
+      m_shooterLower.set(-Shooter.INTAKE_SPEED);
+      m_shooterUpper.set(-Shooter.SHOOTER_SPEED);
+    } else {
+      m_shooterLower.set(0);
+      m_shooterUpper.set(0); 
+    }
+  }
 
   /** This function is called once when the robot is disabled. */
+  
+
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    // Create an array of motors
+    PWMSparkMax[] motors = new PWMSparkMax[] {
+      //drive
+      m_topLeft, 
+      m_topRight, 
+      m_bottomLeft, 
+      m_bottomRight,
+      //shooter
+      m_shooterLower,
+      m_shooterUpper,
+    };
+
+    // Turn off all the motors
+    for (PWMSparkMax motor : motors) {
+      motor.set(0);
+    }
+
+    m_climber.set(0);
+  }
 
   /** This function is called periodically when disabled. */
   @Override
