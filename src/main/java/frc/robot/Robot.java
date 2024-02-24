@@ -7,7 +7,7 @@ package frc.robot;
 import com.revrobotics.CANSparkMax;
 
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import edu.wpi.first.wpilibj.motorcontrol.VictorSP;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
@@ -31,13 +31,13 @@ public class Robot extends TimedRobot {
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
   // motors
-  private final PWMSparkMax m_topLeft = new PWMSparkMax(Drivetrain.TOP_LEFT_PORT);
-  private final PWMSparkMax m_topRight = new PWMSparkMax(Drivetrain.TOP_RIGHT_PORT);
-  private final PWMSparkMax m_bottomLeft = new PWMSparkMax(Drivetrain.BOTTOM_LEFT_PORT);
-  private final PWMSparkMax m_bottomRight = new PWMSparkMax(Drivetrain.BOTTOM_RIGHT_PORT);
+  private final VictorSP m_topLeft = new VictorSP(Drivetrain.TOP_LEFT_PORT);
+  private final VictorSP m_topRight = new VictorSP(Drivetrain.TOP_RIGHT_PORT);
+  private final VictorSP m_bottomLeft = new VictorSP(Drivetrain.BOTTOM_LEFT_PORT);
+  private final VictorSP m_bottomRight = new VictorSP(Drivetrain.BOTTOM_RIGHT_PORT);
 
-  private final PWMSparkMax m_shooterLower = new PWMSparkMax(Shooter.SHOOTER_LOWER_PORT);
-  private final PWMSparkMax m_shooterUpper = new PWMSparkMax(Shooter.SHOOTER_UPPER_PORT);
+  private final VictorSP m_shooterLower = new VictorSP(Shooter.SHOOTER_LOWER_PORT);
+  private final VictorSP m_shooterUpper = new VictorSP(Shooter.SHOOTER_UPPER_PORT);
   private final CANSparkMax m_climber = new CANSparkMax(Climber.CLIMBER_MOTOR_PORT, Climber.CLIMBER_MOTOR_TYPE);
 
   //controllers
@@ -156,7 +156,7 @@ public class Robot extends TimedRobot {
   @Override
   public void disabledInit() {
     // Create an array of motors
-    PWMSparkMax[] motors = new PWMSparkMax[] {
+    VictorSP[] motors = new VictorSP[] {
       //drive
       m_topLeft, 
       m_topRight, 
@@ -168,7 +168,7 @@ public class Robot extends TimedRobot {
     };
 
     // Turn off all the motors
-    for (PWMSparkMax motor : motors) {
+    for (VictorSP motor : motors) {
       motor.set(0);
     }
 
